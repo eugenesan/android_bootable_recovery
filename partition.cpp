@@ -97,6 +97,7 @@ TWPartition::TWPartition() {
 	Backup_Path = "";
 	Actual_Block_Device = "";
 	Primary_Block_Device = "";
+	Alternate_Block_Device = "";
 	Removable = false;
 	Is_Present = false;
 	Length = 0;
@@ -907,7 +908,7 @@ bool TWPartition::Find_Partition_Size(void) {
 
 			tmpdevice = "/dev/";
 			tmpdevice += label;
-			if (tmpdevice == Primary_Block_Device) {
+			if (tmpdevice == Primary_Block_Device || tmpdevice == Alternate_Block_Device) {
 				Size = size;
 				fclose(fp);
 				return true;
@@ -937,7 +938,7 @@ bool TWPartition::Find_Partition_Size(void) {
 
 		tmpdevice = "/dev/block/";
 		tmpdevice += device;
-		if (tmpdevice == Primary_Block_Device) {
+		if (tmpdevice == Primary_Block_Device || tmpdevice == Alternate_Block_Device) {
 			// Adjust block size to byte size
 			Size = blocks * 1024ULL;
 			fclose(fp);
@@ -2228,8 +2229,13 @@ void TWPartition::Find_Actual_Block_Device(void) {
 		Actual_Block_Device = Primary_Block_Device;
 		return;
 	}
-	if (!Is_Decrypted)
+	if (Is_Decrypted) {
+	} else if (!Alternate_Block_Device.empty() && TWFunc::Path_Exists(Alternate_Block_Device)) {
+		Actual_Block_Device = Alternate_Block_Device;
+		Is_Present = true;
+	} else {
 		Is_Present = false;
+	}
 }
 
 void TWPartition::Recreate_Media_Folder(void) {
